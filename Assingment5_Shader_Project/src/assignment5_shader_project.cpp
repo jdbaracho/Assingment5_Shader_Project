@@ -22,11 +22,15 @@ public:
     void initCallback(GLFWwindow* win) override;
     void displayCallback(GLFWwindow* win, double elapsed) override;
     void windowSizeCallback(GLFWwindow* win, int width, int height) override;
+    void keyCallback(GLFWwindow* win, int key, int scancode, int action, int mods) override;
+    void cursorCallback(GLFWwindow* win, double xpos, double ypos) override;
+    void mouseButtonCallback(GLFWwindow* win, int button, int action, int mods) override;
+    void scrollCallback(GLFWwindow* win, double xoffset, double yoffset) override;
 
 private:
     const GLuint UBO_BP = 0;
     mgl::ShaderProgram* Shaders = nullptr;
-    mgl::Camera* Camera = nullptr;
+    mgl::OrbitCamera* Camera = nullptr;
     GLint ModelMatrixId;
     mgl::Mesh* Mesh = nullptr;
 
@@ -78,28 +82,12 @@ void MyApp::createShaderPrograms() {
 
 ///////////////////////////////////////////////////////////////////////// CAMERA
 
-// Eye(5,5,5) Center(0,0,0) Up(0,1,0)
-const glm::mat4 ViewMatrix1 =
-glm::lookAt(glm::vec3(5.0f, 5.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f),
-    glm::vec3(0.0f, 1.0f, 0.0f));
-
-// Eye(-5,-5,-5) Center(0,0,0) Up(0,1,0)
-const glm::mat4 ViewMatrix2 =
-glm::lookAt(glm::vec3(-5.0f, -5.0f, -5.0f), glm::vec3(0.0f, 0.0f, 0.0f),
-    glm::vec3(0.0f, 1.0f, 0.0f));
-
-// Orthographic LeftRight(-2,2) BottomTop(-2,2) NearFar(1,10)
-const glm::mat4 ProjectionMatrix1 =
-glm::ortho(-2.0f, 2.0f, -2.0f, 2.0f, 1.0f, 10.0f);
-
-// Perspective Fovy(30) Aspect(640/480) NearZ(1) FarZ(10)
-const glm::mat4 ProjectionMatrix2 =
-glm::perspective(glm::radians(30.0f), 640.0f / 480.0f, 1.0f, 10.0f);
-
 void MyApp::createCamera() {
-    Camera = new mgl::Camera(UBO_BP);
-    Camera->setViewMatrix(ViewMatrix1);
-    Camera->setProjectionMatrix(ProjectionMatrix2);
+    Camera = new mgl::OrbitCamera(UBO_BP);
+    // Eye(5,5,5) Center(0,0,0) Up(0,1,0)
+    Camera->setViewMatrix(glm::vec3(5.0f, 5.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    // Perspective Fovy(30) Aspect(640/480) NearZ(1) FarZ(10)
+    Camera->setPerspectiveMatrix(30.0f, 640.0f / 480.0f, 1.0f, 10.0f);
 }
 
 /////////////////////////////////////////////////////////////////////////// DRAW
@@ -124,9 +112,29 @@ void MyApp::initCallback(GLFWwindow* win) {
 void MyApp::windowSizeCallback(GLFWwindow* win, int winx, int winy) {
     glViewport(0, 0, winx, winy);
     // change projection matrices to maintain aspect ratio
+    Camera->windowSize(winx, winy);
 }
 
-void MyApp::displayCallback(GLFWwindow* win, double elapsed) { drawScene(); }
+void MyApp::keyCallback(GLFWwindow* win, int key, int scancode, int action, int mods) {
+    // pressedKeys[key] = action != GLFW_RELEASE;
+}
+
+void MyApp::displayCallback(GLFWwindow* win, double elapsed) {
+    Camera->update();
+    drawScene();
+}
+
+void MyApp::cursorCallback(GLFWwindow* win, double xpos, double ypos) {
+    Camera->cursor(xpos, ypos);
+}
+
+void MyApp::mouseButtonCallback(GLFWwindow* win, int button, int action, int mods) {
+    Camera->mouseButton(win, button, action);
+}
+
+void MyApp::scrollCallback(GLFWwindow* win, double xoffset, double yoffset) {
+    Camera->scroll(xoffset, yoffset);
+}
 
 /////////////////////////////////////////////////////////////////////////// MAIN
 
