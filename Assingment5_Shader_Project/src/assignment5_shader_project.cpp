@@ -28,55 +28,63 @@ public:
 
 private:
     const GLuint UBO_BP = 0;
-    mgl::ShaderProgram* Shaders = nullptr;
     mgl::OrbitCamera* Camera = nullptr;
-    GLint ModelMatrixId;
-    mgl::Mesh* Mesh = nullptr;
+    mgl::Scenegraph* scenegraph = nullptr;
 
+    void newMesh(std::string meshID, std::string meshFile);
     void createMeshes();
+    void newShader(std::string meshID, std::string shaderID, std::string vShader, std::string fShader);
     void createShaderPrograms();
     void createCamera();
+    void createScenegraph();
     void drawScene();
 };
 
 ///////////////////////////////////////////////////////////////////////// MESHES
 
-void MyApp::createMeshes() {
-    std::string mesh_dir = "./assets/models/";
-    //std::string mesh_file = "cube-v.obj";
-    //std::string mesh_file = "cube-vn.obj";
-    //std::string mesh_file = "cube-vtn.obj";
-    std::string mesh_file = "cube-vtn-2.obj";
-    std::string mesh_fullname = mesh_dir + mesh_file;
+void MyApp::newMesh(std::string meshID, std::string meshFile) {
+    std::string path = "./assets/models/" + meshFile;
 
-    Mesh = new mgl::Mesh();
-    Mesh->joinIdenticalVertices();
-    Mesh->create(mesh_fullname);
+    mgl::Mesh* mesh = new mgl::Mesh();
+    mesh->joinIdenticalVertices();
+    mesh->create(path);
+
+    mgl::MeshManager::getInstance().add(meshID, mesh);
+}
+
+void MyApp::createMeshes() {
+    newMesh("cube", "cube-vtn-2.obj");
 }
 
 ///////////////////////////////////////////////////////////////////////// SHADER
 
+void MyApp::newShader(std::string meshID, std::string shaderID, std::string vShader, std::string fShader) {
+    mgl::Mesh* mesh = mgl::MeshManager::getInstance().get(meshID);
+
+    mgl::ShaderProgram* shader = new mgl::ShaderProgram();
+    shader->addShader(GL_VERTEX_SHADER, "./src/shaders/" + vShader);
+    shader->addShader(GL_FRAGMENT_SHADER, "./src/shaders/" + fShader);
+
+    shader->addAttribute(mgl::POSITION_ATTRIBUTE, mgl::Mesh::POSITION);
+    if (mesh->hasNormals()) {
+        shader->addAttribute(mgl::NORMAL_ATTRIBUTE, mgl::Mesh::NORMAL);
+    }
+    if (mesh->hasTexcoords()) {
+        shader->addAttribute(mgl::TEXCOORD_ATTRIBUTE, mgl::Mesh::TEXCOORD);
+    }
+    if (mesh->hasTangentsAndBitangents()) {
+        shader->addAttribute(mgl::TANGENT_ATTRIBUTE, mgl::Mesh::TANGENT);
+    }
+
+    shader->addUniform(mgl::MODEL_MATRIX);
+    shader->addUniformBlock(mgl::CAMERA_BLOCK, UBO_BP);
+    shader->create();
+
+    mgl::ShaderManager::getInstance().add(shaderID, shader);
+}
+
 void MyApp::createShaderPrograms() {
-    Shaders = new mgl::ShaderProgram();
-    Shaders->addShader(GL_VERTEX_SHADER, "./src/shaders/cube-vs.glsl");
-    Shaders->addShader(GL_FRAGMENT_SHADER, "./src/shaders/cube-fs.glsl");
-
-    Shaders->addAttribute(mgl::POSITION_ATTRIBUTE, mgl::Mesh::POSITION);
-    if (Mesh->hasNormals()) {
-        Shaders->addAttribute(mgl::NORMAL_ATTRIBUTE, mgl::Mesh::NORMAL);
-    }
-    if (Mesh->hasTexcoords()) {
-        Shaders->addAttribute(mgl::TEXCOORD_ATTRIBUTE, mgl::Mesh::TEXCOORD);
-    }
-    if (Mesh->hasTangentsAndBitangents()) {
-        Shaders->addAttribute(mgl::TANGENT_ATTRIBUTE, mgl::Mesh::TANGENT);
-    }
-
-    Shaders->addUniform(mgl::MODEL_MATRIX);
-    Shaders->addUniformBlock(mgl::CAMERA_BLOCK, UBO_BP);
-    Shaders->create();
-
-    ModelMatrixId = Shaders->Uniforms[mgl::MODEL_MATRIX].index;
+    newShader("cube", "base", "cube-vs.glsl", "cube-fs.glsl");
 }
 
 ///////////////////////////////////////////////////////////////////////// CAMERA
@@ -89,15 +97,24 @@ void MyApp::createCamera() {
     Camera->setPerspectiveMatrix(30.0f, 640.0f / 480.0f, 1.0f, 10.0f);
 }
 
+///////////////////////////////////////////////////////////////////// SCENEGRAPH
+
+void MyApp::createScenegraph() {
+    scenegraph = new mgl::Scenegraph();
+
+    mgl::SceneNode* node = new mgl::SceneNode();
+    node->setMesh("cube");
+    node->setShader("base");
+    
+    scenegraph->addNode(node);
+}
+
 /////////////////////////////////////////////////////////////////////////// DRAW
 
 glm::mat4 ModelMatrix(1.0f);
 
 void MyApp::drawScene() {
-    Shaders->bind();
-    glUniformMatrix4fv(ModelMatrixId, 1, GL_FALSE, glm::value_ptr(ModelMatrix));
-    Mesh->draw();
-    Shaders->unbind();
+    scenegraph->draw();
 }
 
 ////////////////////////////////////////////////////////////////////// CALLBACKS
@@ -106,6 +123,7 @@ void MyApp::initCallback(GLFWwindow* win) {
     createMeshes();
     createShaderPrograms();  // after mesh;
     createCamera();
+    createScenegraph();
 }
 
 void MyApp::windowSizeCallback(GLFWwindow* win, int winx, int winy) {
@@ -141,7 +159,7 @@ int main(int argc, char* argv[]) {
     mgl::Engine& engine = mgl::Engine::getInstance();
     engine.setApp(new MyApp());
     engine.setOpenGL(4, 6);
-    engine.setWindow(800, 600, "Mesh Loader", 0, 1);
+    engine.setWindow(800, 600, "Shader Project", 0, 1);
     engine.init();
     engine.run();
     exit(EXIT_SUCCESS);
