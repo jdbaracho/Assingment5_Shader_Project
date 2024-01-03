@@ -37,7 +37,6 @@ private:
     void createShaderPrograms();
     void createCamera();
     void createScenegraph();
-    void drawScene();
 };
 
 ///////////////////////////////////////////////////////////////////////// MESHES
@@ -93,8 +92,8 @@ void MyApp::createCamera() {
     Camera = new mgl::OrbitCamera(UBO_BP);
     // Eye(5,5,5) Center(0,0,0) Up(0,1,0)
     Camera->setViewMatrix(glm::vec3(5.0f, 5.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    // Perspective Fovy(30) Aspect(640/480) NearZ(1) FarZ(10)
-    Camera->setPerspectiveMatrix(30.0f, 640.0f / 480.0f, 1.0f, 10.0f);
+    // Perspective Fovy(30) Aspect(640/480) NearZ(1) FarZ(100)
+    Camera->setPerspectiveMatrix(30.0f, 640.0f / 480.0f, 1.0f, 100.0f);
 }
 
 ///////////////////////////////////////////////////////////////////// SCENEGRAPH
@@ -103,18 +102,24 @@ void MyApp::createScenegraph() {
     scenegraph = new mgl::Scenegraph();
 
     mgl::SceneNode* node = new mgl::SceneNode();
+    // scale(0.5)
+    node->updateModelMatrix(glm::scale(glm::vec3(0.5f)));
     node->setMesh("cube");
     node->setShader("base");
-    
     scenegraph->addNode(node);
-}
 
-/////////////////////////////////////////////////////////////////////////// DRAW
-
-glm::mat4 ModelMatrix(1.0f);
-
-void MyApp::drawScene() {
-    scenegraph->draw();
+    node = new mgl::SceneNode();
+    // scale(0.5)
+    node->updateModelMatrix(glm::scale(glm::vec3(0.2f)));
+    // rotate(45º, XX)
+    node->updateModelMatrix(glm::rotate(glm::radians(45.0f), glm::vec3(1.0f, 0.0f, 0.0f)));
+    // rotate(45º, ZZ)
+    node->updateModelMatrix(glm::rotate(glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
+    // translate(0, 1, 0)
+    node->updateModelMatrix(glm::translate(glm::vec3(0.0f, 1.0f, 0.0f)));
+    node->setMesh("cube");
+    node->setShader("base");
+    scenegraph->addNode(node);
 }
 
 ////////////////////////////////////////////////////////////////////// CALLBACKS
@@ -138,7 +143,7 @@ void MyApp::keyCallback(GLFWwindow* win, int key, int scancode, int action, int 
 
 void MyApp::displayCallback(GLFWwindow* win, double elapsed) {
     Camera->update();
-    drawScene();
+    scenegraph->draw();
 }
 
 void MyApp::cursorCallback(GLFWwindow* win, double xpos, double ypos) {

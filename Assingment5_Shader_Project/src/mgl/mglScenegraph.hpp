@@ -3,6 +3,8 @@
 // Scene Management Class
 //
 // Copyright (c)2022-23 by Carlos Martinho
+// 
+// modified by João Baracho
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -60,6 +62,7 @@ namespace mgl {
 		SceneNode();
 		~SceneNode();
 		void setModelMatrix(glm::mat4 modelMatrix);
+		void updateModelMatrix(glm::mat4 modelMatrix);
 		void setMesh(std::string meshID);
 		void setShader(std::string shaderID);
 

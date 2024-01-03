@@ -45,6 +45,10 @@ namespace mgl {
 		this->modelMatrix = modelMatrix;
 	}
 
+	void SceneNode::updateModelMatrix(glm::mat4 modelMatrix) {
+		this->modelMatrix = modelMatrix * this->modelMatrix;
+	}
+
 	void SceneNode::setMesh(std::string meshID) {
 		this->meshID = meshID;
 	}
