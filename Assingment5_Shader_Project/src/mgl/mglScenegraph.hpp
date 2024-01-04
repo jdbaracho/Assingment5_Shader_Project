@@ -14,6 +14,7 @@
 #include <glm/glm.hpp>
 #include <vector>
 #include <string>
+#include <fstream>
 
 #include "mglOrbitCamera.hpp"
 
@@ -34,32 +35,33 @@ namespace mgl {
 
 	class Scenegraph : public IDrawable {
 	private:
+		std::string path;
+		
 		OrbitCamera* camera = nullptr;
 
-		// View Matrix
-		glm::vec3 eye;
-		glm::vec3 center;
-		glm::vec3 up;
+		// View Matrix [eye, center, up]
+		glm::vec3 viewMatrix[3];
 
-		// Projection Matrix
-		float fovy;
-		float aspect;
-		float near;
-		float far;
+		// Projection Matrix [fovy, aspect, near, far]
+		float projectionMatrix[4];
 
 		glm::vec3 light;
 
 		std::vector<SceneNode*> nodes;
 
 	public:
-		Scenegraph();
+		Scenegraph(std::string path);
 		~Scenegraph();
+		std::string getPath();
 		void createCamera(GLuint bindingpoint);
 		void setCameraView(glm::vec3 eye, glm::vec3 center, glm::vec3 up);
 		void setCameraPerspective(float fovy, float aspect, float near, float far);
 		void setLight(glm::vec3 light);
 		glm::vec3 getLight();
 		void addNode(SceneNode* node);
+
+		void save();
+		void load();
 
 		void draw();
 
@@ -91,6 +93,9 @@ namespace mgl {
 		void setColor(glm::vec3 color);
 		void setMesh(std::string meshID);
 		void setShader(std::string shaderID);
+
+		void save(std::ofstream& file);
+		void load(std::ifstream& file);
 
 		void draw();
 	};

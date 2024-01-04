@@ -35,6 +35,7 @@ private:
     void newShader(std::string meshID, std::string shaderID, std::string vShader, std::string fShader);
     void createShaderPrograms();
     void createScenegraph();
+    void loadScenegraph();
 };
 
 ///////////////////////////////////////////////////////////////////////// MESHES
@@ -89,7 +90,7 @@ void MyApp::createShaderPrograms() {
 ///////////////////////////////////////////////////////////////////// SCENEGRAPH
 
 void MyApp::createScenegraph() {
-    scenegraph = new mgl::Scenegraph();
+    scenegraph = new mgl::Scenegraph("scenepraph1");
 
     // CAMERA
     scenegraph->createCamera(UBO_BP);
@@ -126,12 +127,19 @@ void MyApp::createScenegraph() {
     scenegraph->addNode(node);
 }
 
+void MyApp::loadScenegraph() {
+    scenegraph = new mgl::Scenegraph("scenepraph1");
+    scenegraph->createCamera(UBO_BP);
+    scenegraph->load();
+}
+
 ////////////////////////////////////////////////////////////////////// CALLBACKS
 
 void MyApp::initCallback(GLFWwindow* win) {
     createMeshes();
     createShaderPrograms();  // after mesh;
     createScenegraph();
+    //loadScenegraph();
 }
 
 void MyApp::windowSizeCallback(GLFWwindow* win, int winx, int winy) {
@@ -142,6 +150,10 @@ void MyApp::windowSizeCallback(GLFWwindow* win, int winx, int winy) {
 
 void MyApp::keyCallback(GLFWwindow* win, int key, int scancode, int action, int mods) {
     // pressedKeys[key] = action != GLFW_RELEASE;
+
+    if (key == GLFW_KEY_S && action == GLFW_RELEASE) {
+        scenegraph->save();
+    }
 }
 
 void MyApp::displayCallback(GLFWwindow* win, double elapsed) {
