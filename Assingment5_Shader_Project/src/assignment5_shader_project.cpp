@@ -149,11 +149,7 @@ void MyApp::windowSizeCallback(GLFWwindow* win, int winx, int winy) {
 }
 
 void MyApp::keyCallback(GLFWwindow* win, int key, int scancode, int action, int mods) {
-    // pressedKeys[key] = action != GLFW_RELEASE;
-
-    if (key == GLFW_KEY_S && action == GLFW_RELEASE) {
-        scenegraph->save();
-    }
+    scenegraph->keyCallback(win, key, scancode, action, mods);
 }
 
 void MyApp::displayCallback(GLFWwindow* win, double elapsed) {

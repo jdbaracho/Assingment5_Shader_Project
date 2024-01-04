@@ -23,6 +23,7 @@
     <ClCompile Include="src\mgl\cpp\mglApp.cpp" />
     <ClCompile Include="src\mgl\cpp\mglCamera.cpp" />
     <ClCompile Include="src\mgl\cpp\mglError.cpp" />
+    <ClCompile Include="src\mgl\cpp\mglKeyBuffer.cpp" />
     <ClCompile Include="src\mgl\cpp\mglMesh.cpp" />
     <ClCompile Include="src\mgl\cpp\mglOrbitCamera.cpp" />
     <ClCompile Include="src\mgl\cpp\mglScenegraph.cpp" />

@@ -3,6 +3,8 @@
 // MGL Library
 //
 // Copyright (c)2022-23 by Carlos Martinho
+// 
+// modified by João Baracho
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -16,6 +18,7 @@
 #include "./mglCamera.hpp"
 #include "./mglConventions.hpp"
 #include "./mglError.hpp"
+#include "./mglKeyBuffer.hpp"
 #include "./mglManager.hpp"
 #include "./mglMesh.hpp"
 #include "./mglOrbitCamera.hpp"

@@ -33,6 +33,11 @@ namespace mgl {
 
 	///////////////////////////////////////////////////////////////////// Scenegraph
 
+	enum Mode {
+		CAMERA,
+		NONE
+	};
+
 	class Scenegraph : public IDrawable {
 	private:
 		std::string path;
@@ -46,6 +51,8 @@ namespace mgl {
 		float projectionMatrix[4];
 
 		glm::vec3 light;
+
+		Mode mode = Mode::NONE;
 
 		std::vector<SceneNode*> nodes;
 

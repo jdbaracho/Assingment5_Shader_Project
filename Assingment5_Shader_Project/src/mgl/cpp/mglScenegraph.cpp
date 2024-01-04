@@ -10,6 +10,7 @@
 
 #include "mglScenegraph.hpp"
 #include "mglManager.hpp"
+#include "mglKeyBuffer.hpp"
 
 namespace mgl {
 
@@ -187,19 +188,59 @@ namespace mgl {
 	}
 
 	void Scenegraph::keyCallback(GLFWwindow* win, int key, int scancode, int action, int mods) {
-		// pressedKeys[key] = action != GLFW_RELEASE;
+		KeyBuffer::getInstance().pressed[key] = action != GLFW_RELEASE;
+
+		if (action == GLFW_RELEASE) {
+			switch (key) {
+			case GLFW_KEY_ESCAPE:
+				mode = Mode::NONE;
+				std::cout << "mode deactivated" << std::endl;
+				break;
+			case GLFW_KEY_C:
+				mode = Mode::CAMERA;
+				std::cout << "camera mode activated" << std::endl;
+				break;
+			case GLFW_KEY_S:
+				save();
+				break;
+			default:
+				break;
+			}
+		}
 	}
 
 	void Scenegraph::cursorCallback(GLFWwindow* win, double xpos, double ypos) {
-		camera->cursor(xpos, ypos);
+		switch (mode) {
+		case mgl::CAMERA:
+			camera->cursor(xpos, ypos);
+			break;
+		default:
+			break;
+		}
 	}
 
 	void Scenegraph::mouseButtonCallback(GLFWwindow* win, int button, int action, int mods) {
-		camera->mouseButton(win, button, action);
+		switch (mode) {
+		case mgl::CAMERA:
+			camera->mouseButton(win, button, action);
+			break;
+		default:
+			break;
+		}
+
+		double xpos, ypos;
+		glfwGetCursorPos(win, &xpos, &ypos);
+		std::cout << "x: " << xpos << " y: " << ypos << std::endl;
 	}
 
 	void Scenegraph::scrollCallback(GLFWwindow* win, double xoffset, double yoffset) {
-		camera->scroll(xoffset, yoffset);
+		switch (mode) {
+		case mgl::CAMERA:
+			camera->scroll(xoffset, yoffset);
+			break;
+		default:
+			break;
+		}
 	}
 
 	////////////////////////////////////////////////////////////////////// SceneNode
