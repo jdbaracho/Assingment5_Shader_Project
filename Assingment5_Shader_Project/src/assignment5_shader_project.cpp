@@ -28,14 +28,12 @@ public:
 
 private:
     const GLuint UBO_BP = 0;
-    mgl::OrbitCamera* Camera = nullptr;
     mgl::Scenegraph* scenegraph = nullptr;
 
     void newMesh(std::string meshID, std::string meshFile);
     void createMeshes();
     void newShader(std::string meshID, std::string shaderID, std::string vShader, std::string fShader);
     void createShaderPrograms();
-    void createCamera();
     void createScenegraph();
 };
 
@@ -76,6 +74,8 @@ void MyApp::newShader(std::string meshID, std::string shaderID, std::string vSha
     }
 
     shader->addUniform(mgl::MODEL_MATRIX);
+    shader->addUniform(mgl::COLOR);
+    shader->addUniform(mgl::LIGHT_POSITION);
     shader->addUniformBlock(mgl::CAMERA_BLOCK, UBO_BP);
     shader->create();
 
@@ -86,21 +86,23 @@ void MyApp::createShaderPrograms() {
     newShader("cube", "base", "cube-vs.glsl", "cube-fs.glsl");
 }
 
-///////////////////////////////////////////////////////////////////////// CAMERA
-
-void MyApp::createCamera() {
-    Camera = new mgl::OrbitCamera(UBO_BP);
-    // Eye(5,5,5) Center(0,0,0) Up(0,1,0)
-    Camera->setViewMatrix(glm::vec3(5.0f, 5.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-    // Perspective Fovy(30) Aspect(640/480) NearZ(1) FarZ(100)
-    Camera->setPerspectiveMatrix(30.0f, 640.0f / 480.0f, 1.0f, 100.0f);
-}
-
 ///////////////////////////////////////////////////////////////////// SCENEGRAPH
 
 void MyApp::createScenegraph() {
     scenegraph = new mgl::Scenegraph();
 
+    // CAMERA
+    scenegraph->createCamera(UBO_BP);
+    // Eye(5,5,5) Center(0,0,0) Up(0,1,0)
+    scenegraph->setCameraView(glm::vec3(5.0f, 5.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    // Perspective Fovy(30) Aspect(640/480) NearZ(1) FarZ(100)
+    scenegraph->setCameraPerspective(30.0f, 640.0f / 480.0f, 1.0f, 100.0f);
+
+    // LIGHT
+    // position(6, 5, 10)
+    scenegraph->setLight(glm::vec3(6.0f, 5.0f, 10.0f));
+
+    // NODES
     mgl::SceneNode* node = new mgl::SceneNode();
     // scale(0.5)
     node->updateModelMatrix(glm::scale(glm::vec3(0.5f)));
@@ -117,6 +119,8 @@ void MyApp::createScenegraph() {
     node->updateModelMatrix(glm::rotate(glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
     // translate(0, 1, 0)
     node->updateModelMatrix(glm::translate(glm::vec3(0.0f, 1.0f, 0.0f)));
+    // Red
+    node->setColor(glm::vec3(1.0f, 0.0f, 0.0f));
     node->setMesh("cube");
     node->setShader("base");
     scenegraph->addNode(node);
@@ -127,14 +131,13 @@ void MyApp::createScenegraph() {
 void MyApp::initCallback(GLFWwindow* win) {
     createMeshes();
     createShaderPrograms();  // after mesh;
-    createCamera();
     createScenegraph();
 }
 
 void MyApp::windowSizeCallback(GLFWwindow* win, int winx, int winy) {
     glViewport(0, 0, winx, winy);
     // change projection matrices to maintain aspect ratio
-    Camera->windowSize(winx, winy);
+    scenegraph->windowSizeCallback(win, winx, winy);
 }
 
 void MyApp::keyCallback(GLFWwindow* win, int key, int scancode, int action, int mods) {
@@ -142,20 +145,19 @@ void MyApp::keyCallback(GLFWwindow* win, int key, int scancode, int action, int 
 }
 
 void MyApp::displayCallback(GLFWwindow* win, double elapsed) {
-    Camera->update();
     scenegraph->draw();
 }
 
 void MyApp::cursorCallback(GLFWwindow* win, double xpos, double ypos) {
-    Camera->cursor(xpos, ypos);
+    scenegraph->cursorCallback(win, xpos, ypos);
 }
 
 void MyApp::mouseButtonCallback(GLFWwindow* win, int button, int action, int mods) {
-    Camera->mouseButton(win, button, action);
+    scenegraph->mouseButtonCallback(win, button, action, mods);
 }
 
 void MyApp::scrollCallback(GLFWwindow* win, double xoffset, double yoffset) {
-    Camera->scroll(xoffset, yoffset);
+    scenegraph->scrollCallback(win, xoffset, yoffset);
 }
 
 /////////////////////////////////////////////////////////////////////////// MAIN
