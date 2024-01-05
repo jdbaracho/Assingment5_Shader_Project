@@ -39,5 +39,8 @@
     <ClCompile Include="src\mgl\cpp\mglScenegraph.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\mgl\cpp\mglKeyBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

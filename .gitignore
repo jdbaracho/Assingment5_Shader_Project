@@ -13,3 +13,6 @@
 
 # Debug files
 Debug/
+
+# Release files
+Release/
