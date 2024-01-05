@@ -83,6 +83,20 @@ namespace mgl {
 		camera->setViewMatrix(eye, center, up);
 	}
 
+	glm::vec3 Scenegraph::getS() {
+		glm::mat4 view = camera->getViewMatrix();
+		glm::vec3 s(view[0][0], view[1][0], view[2][0]);
+
+		return glm::normalize(s);
+	}
+
+	glm::vec3 Scenegraph::getU() {
+		glm::mat4 view = camera->getViewMatrix();
+		glm::vec3 u(view[0][1], view[1][1], view[2][1]);
+
+		return glm::normalize(u);
+	}
+
 	void Scenegraph::setCameraPerspective(float fovy, float aspect, float near, float far) {
 		projectionMatrix[0] = fovy;
 		projectionMatrix[1] = aspect;
@@ -175,12 +189,25 @@ namespace mgl {
 		std::cout << "scenegraph loaded from: " << path << std::endl;
 	}
 
+	void Scenegraph::pick(GLFWwindow* win, int button, int action) {
+		if (button == GLFW_MOUSE_BUTTON_1 && action == GLFW_RELEASE) {
+			double xpos, ypos;
+			int height;
+			glfwGetCursorPos(win, &xpos, &ypos);
+			glfwGetWindowSize(win, NULL, &height);
+			glReadPixels(xpos, height - ypos, 1, 1, GL_STENCIL_INDEX, GL_UNSIGNED_INT, &nodeID);
+			std::cout << "picked object" << nodeID << std::endl;
+		}
+	}
 
 	void Scenegraph::draw() {
+		glEnable(GL_STENCIL_TEST);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 		camera->update();
 		for (auto &node : nodes) {
 			node->draw();
 		}
+		glDisable(GL_STENCIL_TEST);
 	}
 
 	void Scenegraph::windowSizeCallback(GLFWwindow* win, int winx, int winy) {
@@ -204,15 +231,31 @@ namespace mgl {
 			case GLFW_KEY_G:
 				save();
 				break;
+			case GLFW_KEY_P:
+				mode = Mode::PICK;
+				std::cout << "pick mode activated" << std::endl;
+				break;
 			case GLFW_KEY_R:
+				if (nodeID <= 0) {
+					std::cout << "no item selected" << std::endl;
+					break;
+				}
 				mode = Mode::ROTATE;
 				std::cout << "rotate mode activated" << std::endl;
 				break;
 			case GLFW_KEY_S:
+				if (nodeID <= 0) {
+					std::cout << "no item selected" << std::endl;
+					break;
+				}
 				mode = Mode::SCALE;
 				std::cout << "scale mode activated" << std::endl;
 				break;
 			case GLFW_KEY_T:
+				if (nodeID <= 0) {
+					std::cout << "no item selected" << std::endl;
+					break;
+				}
 				mode = Mode::TRANSLATE;
 				std::cout << "translate mode activated" << std::endl;
 				break;
@@ -223,31 +266,42 @@ namespace mgl {
 	}
 
 	void Scenegraph::cursorCallback(GLFWwindow* win, double xpos, double ypos) {
+
 		switch (mode) {
 		case Mode::CAMERA:
 			camera->cursor(xpos, ypos);
 			break;
+		case Mode::ROTATE:
+			if (!leftClick) break;
+			nodes[nodeID - 1]->rotate(xpos - xprev, ypos - yprev);
+				break;
+		case Mode::TRANSLATE:
+			if (!leftClick) break;
+			nodes[nodeID - 1]->translate(xpos - xprev, ypos - yprev);
+				break;
 		default:
 			break;
 		}
+
+		xprev = xpos;
+		yprev = ypos;
 	}
 
 	void Scenegraph::mouseButtonCallback(GLFWwindow* win, int button, int action, int mods) {
+
+        leftClick = button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS;
+		glfwGetCursorPos(win, &xprev, &yprev);
+
 		switch (mode) {
 		case Mode::CAMERA:
 			camera->mouseButton(win, button, action);
 			break;
+		case Mode::PICK:
+			pick(win, button, action);
+			break;
 		default:
 			break;
 		}
-
-		//double xpos, ypos;
-		//int height;
-		//GLuint value;
-		//glfwGetCursorPos(win, &xpos, &ypos);
-		//glfwGetWindowSize(win, &height, NULL);
-		//glReadPixels(xpos, height - ypos, 1, 1, GL_STENCIL_INDEX, GL_UNSIGNED_INT, &value);
-		//std::cout << value << std::endl;
 	}
 
 	void Scenegraph::scrollCallback(GLFWwindow* win, double xoffset, double yoffset) {
@@ -256,7 +310,7 @@ namespace mgl {
 			camera->scroll(xoffset, yoffset);
 			break;
 		case Mode::SCALE:
-			nodes[1]->scale(yoffset);
+			nodes[nodeID-1]->scale(yoffset);
 		default:
 			break;
 		}
@@ -350,15 +404,37 @@ namespace mgl {
 		modelMatrix[0] = glm::scale(sVector) * modelMatrix[0];
 	}
 
+	void SceneNode::rotate(double xamount, double yamount) {
+		glm::quat q = glm::toQuat(modelMatrix[1]);
+
+		q = glm::angleAxis((float)(xamount * rotStep), root->getU()) * q;
+		q = glm::angleAxis((float)(yamount * rotStep), root->getS()) * q;
+
+		modelMatrix[1] = glm::toMat4(q);
+	}
+
+	void SceneNode::translate(double xamount, double yamount) {
+		KeyBuffer keys = KeyBuffer::getInstance();
+		glm::vec3 t(0.0f);
+		glm::vec3 res(0.0f);
+
+		t += root->getS() * (float)(xamount * transStep);
+		t -= root->getU() * (float)(yamount * transStep);
+
+		if (keys.pressed[GLFW_KEY_X]) res.x = t.x;
+		else if (keys.pressed[GLFW_KEY_Y]) res.y = t.y;
+		else if (keys.pressed[GLFW_KEY_Z]) res.z = t.z;
+		else res = t;
+		
+		modelMatrix[2] = glm::translate(res) * modelMatrix[2];
+	}
+
 	void SceneNode::draw() {
+		glStencilFunc(GL_ALWAYS, index + 1, 0xFF);
+
 		ShaderProgram* shader = ShaderManager::getInstance().get(shaderID);
 
 		shader->bind();
-
-		//glEnable(GL_STENCIL_TEST);
-		//glStencilFunc(GL_ALWAYS, index + 1, 0xFF);
-		//glStencilMask(0xFF);
-		//glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
 		GLint ModelMatrixId = shader->Uniforms[mgl::MODEL_MATRIX].index;
 		glm::mat4 model = modelMatrix[2] * modelMatrix[1] * modelMatrix[0];

@@ -35,6 +35,7 @@ namespace mgl {
 
 	enum Mode {
 		CAMERA,
+		PICK,
 		SCALE,
 		ROTATE,
 		TRANSLATE,
@@ -57,6 +58,11 @@ namespace mgl {
 
 		Mode mode = Mode::NONE;
 
+		int nodeID = 0;
+
+		bool leftClick;
+		double xprev, yprev;
+
 		std::vector<SceneNode*> nodes;
 
 	public:
@@ -65,6 +71,8 @@ namespace mgl {
 		std::string getPath();
 		void createCamera(GLuint bindingpoint);
 		void setCameraView(glm::vec3 eye, glm::vec3 center, glm::vec3 up);
+		glm::vec3 getS();
+		glm::vec3 getU();
 		void setCameraPerspective(float fovy, float aspect, float near, float far);
 		void setLight(glm::vec3 light);
 		glm::vec3 getLight();
@@ -72,6 +80,8 @@ namespace mgl {
 
 		void save();
 		void load();
+
+		void pick(GLFWwindow* win, int button, int action);
 
 		void draw();
 
@@ -91,8 +101,11 @@ namespace mgl {
 		// Model Matrix [Scale, Rotate, Translate]
 		glm::mat4 modelMatrix[3];
 		// Scale
-		float deltaScale = 0.0f;
 		const float scaleStep = 1.1f;
+		// Rotate
+		const float rotStep = 0.1f;
+		// Translate
+		const float transStep = 0.01f;
 
 		glm::vec3 color = glm::vec3(1.0f, 1.0f, 1.0f);
 		std::string meshID;
@@ -115,6 +128,8 @@ namespace mgl {
 		void load(std::ifstream& file);
 
 		void scale(double amount);
+		void rotate(double xamount, double yamount);
+		void translate(double xamount, double yamount);
 
 		void draw();
 	};
