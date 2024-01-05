@@ -35,6 +35,9 @@ namespace mgl {
 
 	enum Mode {
 		CAMERA,
+		SCALE,
+		ROTATE,
+		TRANSLATE,
 		NONE
 	};
 
@@ -84,7 +87,13 @@ namespace mgl {
 	class SceneNode : public IDrawable {
 	private:
 		Scenegraph* root = nullptr;
-		glm::mat4 modelMatrix = glm::mat4(1.0f);
+		int index;
+		// Model Matrix [Scale, Rotate, Translate]
+		glm::mat4 modelMatrix[3];
+		// Scale
+		float deltaScale = 0.0f;
+		const float scaleStep = 1.1f;
+
 		glm::vec3 color = glm::vec3(1.0f, 1.0f, 1.0f);
 		std::string meshID;
 		std::string shaderID;
@@ -95,14 +104,17 @@ namespace mgl {
 		SceneNode();
 		~SceneNode();
 		void setRoot(Scenegraph* root);
-		void setModelMatrix(glm::mat4 modelMatrix);
-		void updateModelMatrix(glm::mat4 modelMatrix);
+		void setIndex(int index);
+		void setModelMatrix(glm::mat4 scale, glm::mat4 rotate, glm::mat4 translate);
+		void updateModelMatrix(glm::mat4 scale, glm::mat4 rotate, glm::mat4 translate);
 		void setColor(glm::vec3 color);
 		void setMesh(std::string meshID);
 		void setShader(std::string shaderID);
 
 		void save(std::ofstream& file);
 		void load(std::ifstream& file);
+
+		void scale(double amount);
 
 		void draw();
 	};

@@ -101,6 +101,7 @@ namespace mgl {
 
 	void Scenegraph::addNode(SceneNode* node) {
 		node->setRoot(this);
+		node->setIndex(nodes.size());
 		nodes.push_back(node);
 	}
 
@@ -200,8 +201,20 @@ namespace mgl {
 				mode = Mode::CAMERA;
 				std::cout << "camera mode activated" << std::endl;
 				break;
-			case GLFW_KEY_S:
+			case GLFW_KEY_G:
 				save();
+				break;
+			case GLFW_KEY_R:
+				mode = Mode::ROTATE;
+				std::cout << "rotate mode activated" << std::endl;
+				break;
+			case GLFW_KEY_S:
+				mode = Mode::SCALE;
+				std::cout << "scale mode activated" << std::endl;
+				break;
+			case GLFW_KEY_T:
+				mode = Mode::TRANSLATE;
+				std::cout << "translate mode activated" << std::endl;
 				break;
 			default:
 				break;
@@ -211,7 +224,7 @@ namespace mgl {
 
 	void Scenegraph::cursorCallback(GLFWwindow* win, double xpos, double ypos) {
 		switch (mode) {
-		case mgl::CAMERA:
+		case Mode::CAMERA:
 			camera->cursor(xpos, ypos);
 			break;
 		default:
@@ -221,23 +234,29 @@ namespace mgl {
 
 	void Scenegraph::mouseButtonCallback(GLFWwindow* win, int button, int action, int mods) {
 		switch (mode) {
-		case mgl::CAMERA:
+		case Mode::CAMERA:
 			camera->mouseButton(win, button, action);
 			break;
 		default:
 			break;
 		}
 
-		double xpos, ypos;
-		glfwGetCursorPos(win, &xpos, &ypos);
-		std::cout << "x: " << xpos << " y: " << ypos << std::endl;
+		//double xpos, ypos;
+		//int height;
+		//GLuint value;
+		//glfwGetCursorPos(win, &xpos, &ypos);
+		//glfwGetWindowSize(win, &height, NULL);
+		//glReadPixels(xpos, height - ypos, 1, 1, GL_STENCIL_INDEX, GL_UNSIGNED_INT, &value);
+		//std::cout << value << std::endl;
 	}
 
 	void Scenegraph::scrollCallback(GLFWwindow* win, double xoffset, double yoffset) {
 		switch (mode) {
-		case mgl::CAMERA:
+		case Mode::CAMERA:
 			camera->scroll(xoffset, yoffset);
 			break;
+		case Mode::SCALE:
+			nodes[1]->scale(yoffset);
 		default:
 			break;
 		}
@@ -253,12 +272,20 @@ namespace mgl {
 		this->root = root;
 	}
 
-	void SceneNode::setModelMatrix(glm::mat4 modelMatrix) {
-		this->modelMatrix = modelMatrix;
+	void SceneNode::setIndex(int index) {
+		this->index = index;
 	}
 
-	void SceneNode::updateModelMatrix(glm::mat4 modelMatrix) {
-		this->modelMatrix = modelMatrix * this->modelMatrix;
+	void SceneNode::setModelMatrix(glm::mat4 scale, glm::mat4 rotate, glm::mat4 translate) {
+		modelMatrix[0] = scale;
+		modelMatrix[1] = rotate;
+		modelMatrix[2] = translate;
+	}
+
+	void SceneNode::updateModelMatrix(glm::mat4 scale, glm::mat4 rotate, glm::mat4 translate) {
+		modelMatrix[0] = scale * modelMatrix[0];
+		modelMatrix[1] = rotate * modelMatrix[1];
+		modelMatrix[2] = translate * modelMatrix[2];
 	}
 
 	void SceneNode::setColor(glm::vec3 color) {
@@ -275,7 +302,9 @@ namespace mgl {
 
 	void SceneNode::save(std::ofstream& file) {
 		file << "Node" << std::endl;
-		file << "modelMatrix:\n" << mat4_to_string(modelMatrix) << std::endl;
+		file << "scale:\n" << mat4_to_string(modelMatrix[0]) << std::endl;
+		file << "rotate:\n" << mat4_to_string(modelMatrix[1]) << std::endl;
+		file << "translate:\n" << mat4_to_string(modelMatrix[2]) << std::endl;
 		file << "color:\n" << vec3_to_string(color) << std::endl;
 		file << "meshID:\n" << meshID << std::endl;
 		file << "shaderID:\n" << shaderID << std::endl;
@@ -285,8 +314,11 @@ namespace mgl {
 		std::string line;
 
 		// Model Matrix
-		std::getline(file, line);
-		modelMatrix = read_mat4(file);
+		for (auto& param : modelMatrix) {
+			// name
+			std::getline(file, line);
+			param = read_mat4(file);
+		}
 
 		// Color
 		std::getline(file, line);
@@ -303,13 +335,34 @@ namespace mgl {
 		shaderID = line;
 	}
 
+	void SceneNode::scale(double amount) {
+		KeyBuffer keys = KeyBuffer::getInstance();
+		float sFactor = 1.0f;
+		if (amount > 0) sFactor = scaleStep;
+		if (amount < 0) sFactor = 1/scaleStep;
+
+		glm::vec3 sVector(1.0f);
+		if (keys.pressed[GLFW_KEY_X]) sVector.x = sFactor;
+		else if (keys.pressed[GLFW_KEY_Y]) sVector.y = sFactor;
+		else if (keys.pressed[GLFW_KEY_Z]) sVector.z = sFactor;
+		else sVector = glm::vec3(sFactor);
+
+		modelMatrix[0] = glm::scale(sVector) * modelMatrix[0];
+	}
+
 	void SceneNode::draw() {
 		ShaderProgram* shader = ShaderManager::getInstance().get(shaderID);
 
 		shader->bind();
 
+		//glEnable(GL_STENCIL_TEST);
+		//glStencilFunc(GL_ALWAYS, index + 1, 0xFF);
+		//glStencilMask(0xFF);
+		//glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
 		GLint ModelMatrixId = shader->Uniforms[mgl::MODEL_MATRIX].index;
-		glUniformMatrix4fv(ModelMatrixId, 1, GL_FALSE, glm::value_ptr(modelMatrix));
+		glm::mat4 model = modelMatrix[2] * modelMatrix[1] * modelMatrix[0];
+		glUniformMatrix4fv(ModelMatrixId, 1, GL_FALSE, glm::value_ptr(model));
 
 		GLint ColorId = shader->Uniforms[mgl::COLOR_ATTRIBUTE].index;
 		glUniform3f(ColorId, color.x, color.y, color.z);

@@ -89,6 +89,11 @@ void MyApp::createShaderPrograms() {
 
 ///////////////////////////////////////////////////////////////////// SCENEGRAPH
 
+glm::mat4 I(1.0f);
+glm::mat4 S(1.0f);
+glm::mat4 R(1.0f);
+glm::mat4 T(1.0f);
+
 void MyApp::createScenegraph() {
     scenegraph = new mgl::Scenegraph("scenepraph1");
 
@@ -106,21 +111,23 @@ void MyApp::createScenegraph() {
     // NODES
     mgl::SceneNode* node = new mgl::SceneNode();
     // scale(0.5)
-    node->updateModelMatrix(glm::scale(glm::vec3(0.5f)));
+    S = glm::scale(glm::vec3(0.5f));
+    node->setModelMatrix(S, I, I);
+
     node->setMesh("cube");
     node->setShader("base");
     scenegraph->addNode(node);
 
     node = new mgl::SceneNode();
     // scale(0.5)
-    node->updateModelMatrix(glm::scale(glm::vec3(0.2f)));
-    // rotate(45º, XX)
-    node->updateModelMatrix(glm::rotate(glm::radians(45.0f), glm::vec3(1.0f, 0.0f, 0.0f)));
-    // rotate(45º, ZZ)
-    node->updateModelMatrix(glm::rotate(glm::radians(45.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
+    S = glm::scale(glm::vec3(0.2f));
+    // rotate(45º, (1, 1, 1))
+    R = glm::rotate(glm::radians(45.0f), glm::vec3(1.0f, 1.0f, 1.0f));
     // translate(0, 1, 0)
-    node->updateModelMatrix(glm::translate(glm::vec3(0.0f, 1.0f, 0.0f)));
-    // Red
+    T = glm::translate(glm::vec3(0.0f, 1.0f, 0.0f));
+    node->setModelMatrix(S, R, T);
+
+    // color(red)
     node->setColor(glm::vec3(1.0f, 0.0f, 0.0f));
     node->setMesh("cube");
     node->setShader("base");
