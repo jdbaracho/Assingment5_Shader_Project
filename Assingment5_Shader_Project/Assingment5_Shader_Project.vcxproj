@@ -148,9 +148,11 @@ xcopy /y %(SolutionDir)dependencies\Assimp\bin\x64\assimp-vc143-mt.dll %(OutDir)
       <AdditionalDependencies>opengl32.lib;glew32.lib;glfw3dll.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /y %(SolutionDir)dependencies\glew\bin\Release\x64\glew32.dll %(OutDir)
-xcopy /y %(SolutionDir)dependencies\glfw\lib-vc2022\glfw3.dll %(OutDir)
-xcopy /y %(SolutionDir)dependencies\Assimp\bin\x64\assimp-vc143-mt.dll %(OutDir)</Command>
+      <Command>xcopy /y %(SolutionDir)dependencies\glew\bin\Release\x64\glew32.dll $(OutDir)
+xcopy /y %(SolutionDir)dependencies\glfw\lib-vc2022\glfw3.dll $(OutDir)
+xcopy /y %(SolutionDir)dependencies\Assimp\bin\x64\assimp-vc143-mt.dll $(OutDir)
+xcopy /e /y %(SolutionDir)assets\ $(OutDir)assets\
+xcopy /e /y %(SolutionDir)src\shaders\ $(OutDir)src\shaders\</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
