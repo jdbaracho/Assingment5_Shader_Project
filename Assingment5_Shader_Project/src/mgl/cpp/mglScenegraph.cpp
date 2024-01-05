@@ -83,6 +83,11 @@ namespace mgl {
 		camera->setViewMatrix(eye, center, up);
 	}
 
+	glm::vec3 Scenegraph::getEye() {
+		glm::vec4 eye = camera->getViewMatrix()[3];
+		return glm::vec3(eye.x / eye.w, eye.y / eye.w, eye.z / eye.w);
+	}
+
 	glm::vec3 Scenegraph::getS() {
 		glm::mat4 view = camera->getViewMatrix();
 		glm::vec3 s(view[0][0], view[1][0], view[2][0]);
@@ -142,14 +147,14 @@ namespace mgl {
 		std::cout << "scenegraph saved on: " << path << std::endl;
 	}
 
-	void Scenegraph::load() {
+	bool Scenegraph::load() {
 		std::ifstream file;
 		std::string line;
 
 		file.open(path);
 		if (file.fail()) {
 			std::cout << "error: " << path << " does not exist" << std::endl;
-			return;
+			return false;
 		}
 
 		// Scenegraph
@@ -187,6 +192,7 @@ namespace mgl {
 		}
 		file.close();
 		std::cout << "scenegraph loaded from: " << path << std::endl;
+		return true;
 	}
 
 	void Scenegraph::pick(GLFWwindow* win, int button, int action) {
@@ -446,6 +452,10 @@ namespace mgl {
 		GLint LightPositionId = shader->Uniforms[mgl::LIGHT_POSITION].index;
 		glm::vec3 light = root->getLight();
 		glUniform3f(LightPositionId, light.x, light.y, light.z);
+
+		GLint EyePositionId = shader->Uniforms[mgl::EYE_POSITION].index;
+		glm::vec3 eye = root->getEye();
+		glUniform3f(EyePositionId, eye.x, eye.y, eye.z);
 
 		MeshManager::getInstance().get(meshID)->draw();
 

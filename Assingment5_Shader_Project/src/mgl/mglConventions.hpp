@@ -18,6 +18,7 @@ namespace mgl {
 	const char MODEL_MATRIX[] = "ModelMatrix";
 	const char COLOR[] = "Color";
 	const char LIGHT_POSITION[] = "LightPosition";
+	const char EYE_POSITION[] = "EyePosition";
 	const char NORMAL_MATRIX[] = "NormalMatrix";
 	const char VIEW_MATRIX[] = "ViewMatrix";
 	const char PROJECTION_MATRIX[] = "ProjectionMatrix";

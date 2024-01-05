@@ -30,61 +30,52 @@ private:
     const GLuint UBO_BP = 0;
     mgl::Scenegraph* scenegraph = nullptr;
 
-    void newMesh(std::string meshID, std::string meshFile);
+    void cubeMesh();
     void createMeshes();
-    void newShader(std::string meshID, std::string shaderID, std::string vShader, std::string fShader);
+    void phongShader();
     void createShaderPrograms();
-    void createScenegraph();
-    void loadScenegraph();
+    void createScenegraph(bool reset);
 };
 
 ///////////////////////////////////////////////////////////////////////// MESHES
 
-void MyApp::newMesh(std::string meshID, std::string meshFile) {
-    std::string path = "./assets/models/" + meshFile;
+void MyApp::cubeMesh() {
+    std::string path = "./assets/models/cube-vtn.obj";
 
     mgl::Mesh* mesh = new mgl::Mesh();
     mesh->joinIdenticalVertices();
     mesh->create(path);
 
-    mgl::MeshManager::getInstance().add(meshID, mesh);
+    mgl::MeshManager::getInstance().add("cube", mesh);
 }
 
 void MyApp::createMeshes() {
-    newMesh("cube", "cube-vtn-2.obj");
+    cubeMesh();
 }
 
 ///////////////////////////////////////////////////////////////////////// SHADER
 
-void MyApp::newShader(std::string meshID, std::string shaderID, std::string vShader, std::string fShader) {
-    mgl::Mesh* mesh = mgl::MeshManager::getInstance().get(meshID);
+void MyApp::phongShader() {
 
     mgl::ShaderProgram* shader = new mgl::ShaderProgram();
-    shader->addShader(GL_VERTEX_SHADER, "./src/shaders/" + vShader);
-    shader->addShader(GL_FRAGMENT_SHADER, "./src/shaders/" + fShader);
+    shader->addShader(GL_VERTEX_SHADER, "./src/shaders/phong-vs.glsl");
+    shader->addShader(GL_FRAGMENT_SHADER, "./src/shaders/phong-fs.glsl");
 
     shader->addAttribute(mgl::POSITION_ATTRIBUTE, mgl::Mesh::POSITION);
-    if (mesh->hasNormals()) {
-        shader->addAttribute(mgl::NORMAL_ATTRIBUTE, mgl::Mesh::NORMAL);
-    }
-    if (mesh->hasTexcoords()) {
-        shader->addAttribute(mgl::TEXCOORD_ATTRIBUTE, mgl::Mesh::TEXCOORD);
-    }
-    if (mesh->hasTangentsAndBitangents()) {
-        shader->addAttribute(mgl::TANGENT_ATTRIBUTE, mgl::Mesh::TANGENT);
-    }
+    shader->addAttribute(mgl::NORMAL_ATTRIBUTE, mgl::Mesh::NORMAL);
 
     shader->addUniform(mgl::MODEL_MATRIX);
     shader->addUniform(mgl::COLOR);
     shader->addUniform(mgl::LIGHT_POSITION);
+    shader->addUniform(mgl::EYE_POSITION);
     shader->addUniformBlock(mgl::CAMERA_BLOCK, UBO_BP);
     shader->create();
 
-    mgl::ShaderManager::getInstance().add(shaderID, shader);
+    mgl::ShaderManager::getInstance().add("phong", shader);
 }
 
 void MyApp::createShaderPrograms() {
-    newShader("cube", "base", "cube-vs.glsl", "cube-fs.glsl");
+    phongShader();
 }
 
 ///////////////////////////////////////////////////////////////////// SCENEGRAPH
@@ -94,11 +85,14 @@ glm::mat4 S(1.0f);
 glm::mat4 R(1.0f);
 glm::mat4 T(1.0f);
 
-void MyApp::createScenegraph() {
+void MyApp::createScenegraph(bool reset) {
     scenegraph = new mgl::Scenegraph("scenepraph1");
-
-    // CAMERA
     scenegraph->createCamera(UBO_BP);
+
+    if (!reset && scenegraph->load()) {
+        return;
+    }
+
     // Eye(5,5,5) Center(0,0,0) Up(0,1,0)
     scenegraph->setCameraView(glm::vec3(5.0f, 5.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     // Perspective Fovy(30) Aspect(640/480) NearZ(1) FarZ(100)
@@ -115,7 +109,7 @@ void MyApp::createScenegraph() {
     node->setModelMatrix(S, I, I);
 
     node->setMesh("cube");
-    node->setShader("base");
+    node->setShader("phong");
     scenegraph->addNode(node);
 
     node = new mgl::SceneNode();
@@ -130,14 +124,10 @@ void MyApp::createScenegraph() {
     // color(red)
     node->setColor(glm::vec3(1.0f, 0.0f, 0.0f));
     node->setMesh("cube");
-    node->setShader("base");
+    node->setShader("phong");
     scenegraph->addNode(node);
-}
 
-void MyApp::loadScenegraph() {
-    scenegraph = new mgl::Scenegraph("scenepraph1");
-    scenegraph->createCamera(UBO_BP);
-    scenegraph->load();
+    std::cout << "scenegraph created" << std::endl;
 }
 
 ////////////////////////////////////////////////////////////////////// CALLBACKS
@@ -145,8 +135,7 @@ void MyApp::loadScenegraph() {
 void MyApp::initCallback(GLFWwindow* win) {
     createMeshes();
     createShaderPrograms();  // after mesh;
-    createScenegraph();
-    //loadScenegraph();
+    createScenegraph(false);
 }
 
 void MyApp::windowSizeCallback(GLFWwindow* win, int winx, int winy) {
@@ -157,6 +146,17 @@ void MyApp::windowSizeCallback(GLFWwindow* win, int winx, int winy) {
 
 void MyApp::keyCallback(GLFWwindow* win, int key, int scancode, int action, int mods) {
     scenegraph->keyCallback(win, key, scancode, action, mods);
+
+    if (action == GLFW_RELEASE) {
+        switch (key) {
+        case GLFW_KEY_H:
+            std::cout << "reset scenegraph" << std::endl;
+            createScenegraph(true);
+            break;
+        default:
+            break;
+        }
+    }
 }
 
 void MyApp::displayCallback(GLFWwindow* win, double elapsed) {

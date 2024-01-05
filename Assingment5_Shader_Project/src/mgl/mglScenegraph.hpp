@@ -71,6 +71,7 @@ namespace mgl {
 		std::string getPath();
 		void createCamera(GLuint bindingpoint);
 		void setCameraView(glm::vec3 eye, glm::vec3 center, glm::vec3 up);
+		glm::vec3 getEye();
 		glm::vec3 getS();
 		glm::vec3 getU();
 		void setCameraPerspective(float fovy, float aspect, float near, float far);
@@ -79,7 +80,7 @@ namespace mgl {
 		void addNode(SceneNode* node);
 
 		void save();
-		void load();
+		bool load();
 
 		void pick(GLFWwindow* win, int button, int action);
 

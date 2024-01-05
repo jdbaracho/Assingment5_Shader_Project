@@ -36,7 +36,7 @@ color:
 meshID:
 cube
 shaderID:
-base
+phong
 Node
 scale:
 0.200000 0.000000 0.000000 0.000000
@@ -58,4 +58,4 @@ color:
 meshID:
 cube
 shaderID:
-base
+phong
